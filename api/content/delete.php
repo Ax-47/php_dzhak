@@ -1,20 +1,27 @@
 <?php
 require_once "../../utils/database.php";
 require_once "../../utils/response.php";
-require_once "../../utils/uuid.php";
 require_once "../../utils/auth.php";
 session_start();
-if (IsNotAuthencation())
+if (!IsAdmin())
     return ResponseNotFound();
-if (IsNotAdmin())
+$id=$_GET["id"];
+if (empty($id))
     return ResponseNotFound();
-$content_id=$_GET["id"];
-if (empty($content_id))
-    return ResponseNotFound();
-try{
-    $stmt = $db->prepare("DELETE FROM `contents` WHERE content_id = :content_id");
-    $stmt->execute([":content_id"=>$content_id]);
-}catch(PDOException $e){
+try {
+    $stmt = $db->prepare("SELECT image FROM `contents` WHERE id = :id");
+    $stmt->execute([":id"=>$id]);
+    $content = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
     die($e->getMessage());
 }
-ResponseOk("edited","");
+if (empty($content))
+    return ResponseNotFound();
+unlink("../../assets/uploads/".$content["image"]);
+try {
+        $stmt = $db->prepare("DELETE FROM `contents` WHERE id = :id");
+        $stmt->execute([":id"=>$id]);
+} catch (PDOException $e) {
+        die($e->getMessage());
+}
+ResponseOk("");
